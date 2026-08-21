@@ -1,4 +1,3 @@
-import bookingRoutes from './routes/booking.routes';
 import express, { Application } from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -25,4 +24,3 @@ mongoose.connect(MONGO_URI)
     .catch((error) => {
         console.error('Database connection error:', error);
     });
-    app.use('/api/bookings', bookingRoutes);
