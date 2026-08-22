@@ -14,10 +14,9 @@ app.use(express.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/sessions', sessionRoutes);
-
+app.use("/api/auth", authRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/bookings", bookingRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'APIthletes API is running' });
 });
