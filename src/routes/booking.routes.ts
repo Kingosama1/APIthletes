@@ -7,7 +7,7 @@ const router = Router();
 
 /**
  * @swagger
- * /getMyBookings:
+ * /api/bookings:
  *   post:
  *     summary: Create a new booking
  *     tags: [Bookings]

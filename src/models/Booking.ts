@@ -9,21 +9,29 @@ export interface IBooking extends Document {
 }
 
 const bookingSchema = new Schema({
-  member: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  member: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  session: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'ClassSession', 
-    required: true 
+  session: {
+    type: Schema.Types.ObjectId,
+    ref: 'ClassSession',
+    required: true
   },
-  status: { 
-    type: String, 
-    enum: ['confirmed', 'cancelled'], 
-    default: 'confirmed' 
+  status: {
+    type: String,
+    enum: ['confirmed', 'cancelled'],
+    default: 'confirmed'
   }
 }, { timestamps: true });
+
+bookingSchema.index(
+  { member: 1, session: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'confirmed' }
+  }
+);
 
 export const Booking = mongoose.model<IBooking>('Booking', bookingSchema);

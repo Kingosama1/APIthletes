@@ -4,6 +4,8 @@ import { ClassSession } from '../models/ClassSession';
 import mongoose from 'mongoose';
 
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
+    const dbSession = await mongoose.startSession();
+
     try {
         const { sessionId } = req.body;
         const memberId = (req as any).user?.id;
@@ -14,52 +16,95 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
         }
 
         const session = await ClassSession.findById(sessionId);
+
         if (!session) {
             res.status(404).json({ message: 'Session not found' });
             return;
         }
 
         const now = new Date();
+
         if (now >= session.startTime) {
-            res.status(400).json({ message: 'Cannot book a session that has already started' });
+            res.status(400).json({
+                message: 'Cannot book a session that has already started'
+            });
             return;
         }
 
-        const existingBooking = await Booking.findOne({ member: memberId, session: sessionId, status: 'confirmed' });
-        if (existingBooking) {
-            res.status(409).json({ message: 'You already have a confirmed booking for this session' });
-            return;
-        }
-
-        const updatedSession = await ClassSession.findOneAndUpdate(
-            {
-                _id: sessionId,
-                bookedSeats: { $lt: session.capacity }
-            },
-            {
-                $inc: { bookedSeats: 1 }
-            },
-            { new: true }
-        );
-
-        if (!updatedSession) {
-            res.status(409).json({ message: 'Session is full' });
-            return;
-        }
-
-        const booking = new Booking({
+        const existingBooking = await Booking.findOne({
             member: memberId,
             session: sessionId,
             status: 'confirmed'
         });
 
-        await booking.save();
-        res.status(201).json({ message: 'Booking created successfully', booking });
+        if (existingBooking) {
+            res.status(409).json({
+                message: 'You already have a confirmed booking for this session'
+            });
+            return;
+        }
+
+        let booking;
+
+        await dbSession.withTransaction(async () => {
+            const updatedSession = await ClassSession.findOneAndUpdate(
+                {
+                    _id: sessionId,
+                    bookedSeats: { $lt: session.capacity }
+                },
+                {
+                    $inc: { bookedSeats: 1 }
+                },
+                {
+                    new: true,
+                    session: dbSession
+                }
+            );
+
+            if (!updatedSession) {
+                throw new Error('SESSION_FULL');
+            }
+
+            booking = new Booking({
+                member: memberId,
+                session: sessionId,
+                status: 'confirmed'
+            });
+
+            await booking.save({ session: dbSession });
+        });
+
+        res.status(201).json({
+            message: 'Booking created successfully',
+            booking
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
+        if (error instanceof Error && error.message === 'SESSION_FULL') {
+            res.status(409).json({
+                message: 'Session is full'
+            });
+            return;
+        }
+
+        if (
+            error instanceof mongoose.Error &&
+            'code' in error &&
+            error.code === 11000
+        ) {
+            res.status(409).json({
+                message: 'You already have a confirmed booking for this session'
+            });
+            return;
+        }
+
+        res.status(500).json({
+            message: 'Server error',
+            error
+        });
+    } finally {
+        await dbSession.endSession();
     }
 };
-
 export const getMyBookings = async (req: Request, res: Response): Promise<void> => {
     try {
         const memberId = (req as any).user?.id;

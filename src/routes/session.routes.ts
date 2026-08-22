@@ -17,10 +17,10 @@ router.get("/", getAllSessions);
 
 router.get("/:id", getSessionById);
 
-router.post("/", auth, requireRole("trainer"), createSession);
+router.post("/", auth, requireRole("Trainer"), createSession);
 
-router.put("/:id", auth, requireRole("trainer"), updateSession);
+router.put("/:id", auth, requireRole("Trainer"), updateSession);
 
-router.delete("/:id", auth, requireRole("trainer"), deleteSession);
+router.delete("/:id", auth, requireRole("Trainer"), deleteSession);
 
 export default router;
