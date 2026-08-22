@@ -48,8 +48,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-export default router;
-
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -97,3 +95,4 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+export default router;
